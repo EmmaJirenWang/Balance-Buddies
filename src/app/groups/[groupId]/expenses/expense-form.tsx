@@ -1,3 +1,5 @@
+import Bill from '../../../../../public/Bill.png'
+import Image from 'next/image'
 import { CategorySelector } from '@/components/category-selector'
 import { ExpenseDocumentsInput } from '@/components/expense-documents-input'
 import { SubmitButton } from '@/components/submit-button'
@@ -170,23 +172,23 @@ export function ExpenseForm({
     resolver: zodResolver(expenseFormSchema),
     defaultValues: expense
       ? {
-          title: expense.title,
-          expenseDate: expense.expenseDate ?? new Date(),
-          amount: String(expense.amount / 100) as unknown as number, // hack
-          category: expense.categoryId,
-          paidBy: expense.paidById,
-          paidFor: expense.paidFor.map(({ participantId, shares }) => ({
-            participant: participantId,
-            shares: String(shares / 100) as unknown as number,
-          })),
-          splitMode: expense.splitMode,
-          saveDefaultSplittingOptions: false,
-          isReimbursement: expense.isReimbursement,
-          documents: expense.documents,
-          notes: expense.notes ?? '',
-        }
+        title: expense.title,
+        expenseDate: expense.expenseDate ?? new Date(),
+        amount: String(expense.amount / 100) as unknown as number, // hack
+        category: expense.categoryId,
+        paidBy: expense.paidById,
+        paidFor: expense.paidFor.map(({ participantId, shares }) => ({
+          participant: participantId,
+          shares: String(shares / 100) as unknown as number,
+        })),
+        splitMode: expense.splitMode,
+        saveDefaultSplittingOptions: false,
+        isReimbursement: expense.isReimbursement,
+        documents: expense.documents,
+        notes: expense.notes ?? '',
+      }
       : searchParams.get('reimbursement')
-      ? {
+        ? {
           title: t('reimbursement'),
           expenseDate: new Date(),
           amount: String(
@@ -197,9 +199,9 @@ export function ExpenseForm({
           paidFor: [
             searchParams.get('to')
               ? {
-                  participant: searchParams.get('to')!,
-                  shares: '1' as unknown as number,
-                }
+                participant: searchParams.get('to')!,
+                shares: '1' as unknown as number,
+              }
               : undefined,
           ],
           isReimbursement: true,
@@ -208,7 +210,7 @@ export function ExpenseForm({
           documents: [],
           notes: '',
         }
-      : {
+        : {
           title: searchParams.get('title') ?? '',
           expenseDate: searchParams.get('date')
             ? new Date(searchParams.get('date') as string)
@@ -225,13 +227,13 @@ export function ExpenseForm({
           saveDefaultSplittingOptions: false,
           documents: searchParams.get('imageUrl')
             ? [
-                {
-                  id: randomId(),
-                  url: searchParams.get('imageUrl') as string,
-                  width: Number(searchParams.get('imageWidth')),
-                  height: Number(searchParams.get('imageHeight')),
-                },
-              ]
+              {
+                id: randomId(),
+                url: searchParams.get('imageUrl') as string,
+                width: Number(searchParams.get('imageWidth')),
+                height: Number(searchParams.get('imageHeight')),
+              },
+            ]
             : [],
           notes: '',
         },
@@ -318,171 +320,262 @@ export function ExpenseForm({
               {t(`${sExpense}.${isCreate ? 'create' : 'edit'}`)}
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid sm:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem className="">
-                  <FormLabel>Expense Description</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Lunch after Software Engineering class"
-                      className="text-base"
-                      {...field}
-                      onBlur={async () => {
-                        field.onBlur() // avoid skipping other blur event listeners since we overwrite `field`
-                        if (runtimeFeatureFlags.enableCategoryExtract) {
-                          setCategoryLoading(true)
-                          const { categoryId } = await extractCategoryFromTitle(
-                            field.value,
-                          )
-                          form.setValue('category', categoryId)
-                          setCategoryLoading(false)
+          <CardContent className="flex flex-col items-center">
+            <div className='flex flex-row justify-center items-center space-x-12'>
+              <div>
+                {/* category */}
+                {/* <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem className="order-3 sm:order-2">
+                      <CategorySelector
+                        categories={categories}
+                        defaultValue={
+                          form.watch(field.name) // may be overwritten externally
                         }
-                      }}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {t(`${sExpense}.TitleField.description`)}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                        onValueChange={field.onChange}
+                        isLoading={isCategoryLoading}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                /> */}
+                <Image src={Bill} alt="bill image" className='w-24 h-24'></Image>
+              </div>
+              <div>
+                {/* expense description */}
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem className="">
+                      <FormLabel>Expense Description</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Lunch after Software Engineering class"
+                          className="text-base"
+                          {...field}
+                          onBlur={async () => {
+                            field.onBlur()
+                            if (runtimeFeatureFlags.enableCategoryExtract) {
+                              setCategoryLoading(true)
+                              const { categoryId } = await extractCategoryFromTitle(
+                                field.value,
+                              )
+                              form.setValue('category', categoryId)
+                              setCategoryLoading(false)
+                            }
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {/* Amount */}
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field: { onChange, ...field } }) => (
+                    <FormItem className="sm:order-3">
+                      <FormLabel>{t('amountField.label')}</FormLabel>
+                      <div className="flex items-baseline gap-2">
+                        <span>{group.currency}</span>
+                        <FormControl>
+                          <Input
+                            className="text-base max-w-[120px]"
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="0.00"
+                            onChange={(event) => {
+                              const v = enforceCurrencyPattern(event.target.value)
+                              const income = Number(v) < 0
+                              setIsIncome(income)
+                              if (income) form.setValue('isReimbursement', false)
+                              onChange(v)
+                            }}
+                            onFocus={(e) => {
+                              const target = e.currentTarget
+                              setTimeout(() => target.select(), 1)
+                            }}
+                            {...field}
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+            <div className='flex flex-row items-center justify-center space-x-24'>
+              <div>
+                {/* paid by */}
+                <FormField
+                  control={form.control}
+                  name="paidBy"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row sm:order-5">
+                      <FormLabel>Paid by</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={getSelectedPayer(field)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a participant" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {group.participants.map(({ id, name }: { id: string; name: string }) => (
+                            <SelectItem key={id} value={id}>
+                              {name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-            <FormField
-              control={form.control}
-              name="expenseDate"
-              render={({ field }) => (
-                <FormItem className="sm:order-1">
-                  <FormLabel>{t(`${sExpense}.DateField.label`)}</FormLabel>
-                  <FormControl>
-                    <Input
-                      className="date-base"
-                      type="date"
-                      defaultValue={formatDate(field.value)}
-                      onChange={(event) => {
-                        return field.onChange(new Date(event.target.value))
-                      }}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {t(`${sExpense}.DateField.description`)}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field: { onChange, ...field } }) => (
-                <FormItem className="sm:order-3">
-                  <FormLabel>{t('amountField.label')}</FormLabel>
-                  <div className="flex items-baseline gap-2">
-                    <span>{group.currency}</span>
+              <Card className="mt-4">
+                <CardHeader>
+                  <CardTitle className="flex justify-between">
+                    <span>Split By</span>
+                    <Button
+                      variant="link"
+                      type="button"
+                      className="-my-2 -mx-4 ml-6"
+                      onClick={() => {
+                        const paidFor = form.getValues().paidFor
+                        const allSelected =
+                          paidFor.length === group.participants.length
+                        const newPaidFor = allSelected
+                          ? []
+                          : group.participants.map((p) => ({
+                            participant: p.id,
+                            shares:
+                              paidFor.find((pfor) => pfor.participant === p.id)
+                                ?.shares ?? ('1' as unknown as number),
+                          }))
+                        form.setValue('paidFor', newPaidFor, {
+                          shouldDirty: true,
+                          shouldTouch: true,
+                          shouldValidate: true,
+                        })
+                      }}
+                    >
+                      {form.getValues().paidFor.length ===
+                        group.participants.length ? (
+                        <>Clear</>
+                      ) : (
+                        <>selectAll</>
+                      )}
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <FormField
+                    control={form.control}
+                    name="paidFor"
+                    render={() => (
+                      <FormItem className="sm:order-4 row-span-2 space-y-0">
+                        {group.participants.map(({ id, name }) => (
+                          <FormField
+                            key={id}
+                            control={form.control}
+                            name="paidFor"
+                            render={({ field }) => {
+                              return (
+                                <div
+                                  data-id={`${id}/${form.getValues().splitMode}/${group.currency
+                                    }`}
+                                  className="flex items-center border-t last-of-type:border-b last-of-type:!mb-4 -mx-6 px-6 py-3"
+                                >
+                                  <FormItem className="flex-1 flex flex-row items-start space-x-3 space-y-0">
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value?.some(
+                                          ({ participant }) => participant === id,
+                                        )}
+                                        onCheckedChange={(checked) => {
+                                          const options = {
+                                            shouldDirty: true,
+                                            shouldTouch: true,
+                                            shouldValidate: true,
+                                          }
+                                          checked
+                                            ? form.setValue(
+                                              'paidFor',
+                                              [
+                                                ...field.value,
+                                                {
+                                                  participant: id,
+                                                  shares: '1' as unknown as number,
+                                                },
+                                              ],
+                                              options,
+                                            )
+                                            : form.setValue(
+                                              'paidFor',
+                                              field.value?.filter(
+                                                (value) => value.participant !== id,
+                                              ),
+                                              options,
+                                            )
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <FormLabel className="text-sm font-normal flex-1">
+                                      {name}
+                                    </FormLabel>
+                                  </FormItem>
+                                </div>
+                              )
+                            }}
+                          />
+                        ))}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className='mt-12'>
+              {/* Date */}
+              <FormField
+                control={form.control}
+                name="expenseDate"
+                render={({ field }) => (
+                  <FormItem className="sm:order-1">
                     <FormControl>
                       <Input
-                        className="text-base max-w-[120px]"
-                        type="text"
-                        inputMode="decimal"
-                        placeholder="0.00"
+                        className="date-base"
+                        type="date"
+                        defaultValue={formatDate(field.value)}
                         onChange={(event) => {
-                          const v = enforceCurrencyPattern(event.target.value)
-                          const income = Number(v) < 0
-                          setIsIncome(income)
-                          if (income) form.setValue('isReimbursement', false)
-                          onChange(v)
+                          return field.onChange(new Date(event.target.value))
                         }}
-                        onFocus={(e) => {
-                          // we're adding a small delay to get around safaris issue with onMouseUp deselecting things again
-                          const target = e.currentTarget
-                          setTimeout(() => target.select(), 1)
-                        }}
-                        {...field}
                       />
                     </FormControl>
-                  </div>
-                  <FormMessage />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-                  {!isIncome && (
-                    <FormField
-                      control={form.control}
-                      name="isReimbursement"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row gap-2 items-center space-y-0 pt-2">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div>
-                            <FormLabel>
-                              {t('isReimbursementField.label')}
-                            </FormLabel>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                  )}
-                </FormItem>
-              )}
-            />
 
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem className="order-3 sm:order-2">
-                  <FormLabel>{t('categoryField.label')}</FormLabel>
-                  <CategorySelector
-                    categories={categories}
-                    defaultValue={
-                      form.watch(field.name) // may be overwritten externally
-                    }
-                    onValueChange={field.onChange}
-                    isLoading={isCategoryLoading}
-                  />
-                  <FormDescription>
-                    {t(`${sExpense}.categoryFieldDescription`)}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
-            <FormField
-              control={form.control}
-              name="paidBy"
-              render={({ field }) => (
-                <FormItem className="sm:order-5">
-                  <FormLabel>{t(`${sExpense}.paidByField.label`)}</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={getSelectedPayer(field)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a participant" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {group.participants.map(({ id, name }) => (
-                        <SelectItem key={id} value={id}>
-                          {name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    {t(`${sExpense}.paidByField.description`)}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
+
+
+
+
+
+            {/* <FormField
               control={form.control}
               name="notes"
               render={({ field }) => (
@@ -493,293 +586,11 @@ export function ExpenseForm({
                   </FormControl>
                 </FormItem>
               )}
-            />
+            /> */}
           </CardContent>
         </Card>
 
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle className="flex justify-between">
-              <span>{t(`${sExpense}.paidFor.title`)}</span>
-              <Button
-                variant="link"
-                type="button"
-                className="-my-2 -mx-4"
-                onClick={() => {
-                  const paidFor = form.getValues().paidFor
-                  const allSelected =
-                    paidFor.length === group.participants.length
-                  const newPaidFor = allSelected
-                    ? []
-                    : group.participants.map((p) => ({
-                        participant: p.id,
-                        shares:
-                          paidFor.find((pfor) => pfor.participant === p.id)
-                            ?.shares ?? ('1' as unknown as number),
-                      }))
-                  form.setValue('paidFor', newPaidFor, {
-                    shouldDirty: true,
-                    shouldTouch: true,
-                    shouldValidate: true,
-                  })
-                }}
-              >
-                {form.getValues().paidFor.length ===
-                group.participants.length ? (
-                  <>{t('selectNone')}</>
-                ) : (
-                  <>{t('selectAll')}</>
-                )}
-              </Button>
-            </CardTitle>
-            <CardDescription>
-              {t(`${sExpense}.paidFor.description`)}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <FormField
-              control={form.control}
-              name="paidFor"
-              render={() => (
-                <FormItem className="sm:order-4 row-span-2 space-y-0">
-                  {group.participants.map(({ id, name }) => (
-                    <FormField
-                      key={id}
-                      control={form.control}
-                      name="paidFor"
-                      render={({ field }) => {
-                        return (
-                          <div
-                            data-id={`${id}/${form.getValues().splitMode}/${
-                              group.currency
-                            }`}
-                            className="flex items-center border-t last-of-type:border-b last-of-type:!mb-4 -mx-6 px-6 py-3"
-                          >
-                            <FormItem className="flex-1 flex flex-row items-start space-x-3 space-y-0">
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value?.some(
-                                    ({ participant }) => participant === id,
-                                  )}
-                                  onCheckedChange={(checked) => {
-                                    const options = {
-                                      shouldDirty: true,
-                                      shouldTouch: true,
-                                      shouldValidate: true,
-                                    }
-                                    checked
-                                      ? form.setValue(
-                                          'paidFor',
-                                          [
-                                            ...field.value,
-                                            {
-                                              participant: id,
-                                              shares: '1' as unknown as number,
-                                            },
-                                          ],
-                                          options,
-                                        )
-                                      : form.setValue(
-                                          'paidFor',
-                                          field.value?.filter(
-                                            (value) => value.participant !== id,
-                                          ),
-                                          options,
-                                        )
-                                  }}
-                                />
-                              </FormControl>
-                              <FormLabel className="text-sm font-normal flex-1">
-                                {name}
-                              </FormLabel>
-                            </FormItem>
-                            {form.getValues().splitMode !== 'EVENLY' && (
-                              <FormField
-                                name={`paidFor[${field.value.findIndex(
-                                  ({ participant }) => participant === id,
-                                )}].shares`}
-                                render={() => {
-                                  const sharesLabel = (
-                                    <span
-                                      className={cn('text-sm', {
-                                        'text-muted': !field.value?.some(
-                                          ({ participant }) =>
-                                            participant === id,
-                                        ),
-                                      })}
-                                    >
-                                      {match(form.getValues().splitMode)
-                                        .with('BY_SHARES', () => (
-                                          <>{t('shares')}</>
-                                        ))
-                                        .with('BY_PERCENTAGE', () => <>%</>)
-                                        .with('BY_AMOUNT', () => (
-                                          <>{group.currency}</>
-                                        ))
-                                        .otherwise(() => (
-                                          <></>
-                                        ))}
-                                    </span>
-                                  )
-                                  return (
-                                    <div>
-                                      <div className="flex gap-1 items-center">
-                                        {form.getValues().splitMode ===
-                                          'BY_AMOUNT' && sharesLabel}
-                                        <FormControl>
-                                          <Input
-                                            key={String(
-                                              !field.value?.some(
-                                                ({ participant }) =>
-                                                  participant === id,
-                                              ),
-                                            )}
-                                            className="text-base w-[80px] -my-2"
-                                            type="text"
-                                            disabled={
-                                              !field.value?.some(
-                                                ({ participant }) =>
-                                                  participant === id,
-                                              )
-                                            }
-                                            value={
-                                              field.value?.find(
-                                                ({ participant }) =>
-                                                  participant === id,
-                                              )?.shares
-                                            }
-                                            onChange={(event) => {
-                                              field.onChange(
-                                                field.value.map((p) =>
-                                                  p.participant === id
-                                                    ? {
-                                                        participant: id,
-                                                        shares:
-                                                          enforceCurrencyPattern(
-                                                            event.target.value,
-                                                          ),
-                                                      }
-                                                    : p,
-                                                ),
-                                              )
-                                              setManuallyEditedParticipants(
-                                                (prev) => new Set(prev).add(id),
-                                              )
-                                            }}
-                                            inputMode={
-                                              form.getValues().splitMode ===
-                                              'BY_AMOUNT'
-                                                ? 'decimal'
-                                                : 'numeric'
-                                            }
-                                            step={
-                                              form.getValues().splitMode ===
-                                              'BY_AMOUNT'
-                                                ? 0.01
-                                                : 1
-                                            }
-                                          />
-                                        </FormControl>
-                                        {[
-                                          'BY_SHARES',
-                                          'BY_PERCENTAGE',
-                                        ].includes(
-                                          form.getValues().splitMode,
-                                        ) && sharesLabel}
-                                      </div>
-                                      <FormMessage className="float-right" />
-                                    </div>
-                                  )
-                                }}
-                              />
-                            )}
-                          </div>
-                        )
-                      }}
-                    />
-                  ))}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
-            <Collapsible
-              className="mt-5"
-              defaultOpen={form.getValues().splitMode !== 'EVENLY'}
-            >
-              <CollapsibleTrigger asChild>
-                <Button variant="link" className="-mx-4">
-                  {t('advancedOptions')}
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="grid sm:grid-cols-2 gap-6 pt-3">
-                  <FormField
-                    control={form.control}
-                    name="splitMode"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('SplitModeField.label')}</FormLabel>
-                        <FormControl>
-                          <Select
-                            onValueChange={(value) => {
-                              form.setValue('splitMode', value as any, {
-                                shouldDirty: true,
-                                shouldTouch: true,
-                                shouldValidate: true,
-                              })
-                            }}
-                            defaultValue={field.value}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="EVENLY">
-                                {t('SplitModeField.evenly')}
-                              </SelectItem>
-                              <SelectItem value="BY_SHARES">
-                                {t('SplitModeField.byShares')}
-                              </SelectItem>
-                              <SelectItem value="BY_PERCENTAGE">
-                                {t('SplitModeField.byPercentage')}
-                              </SelectItem>
-                              <SelectItem value="BY_AMOUNT">
-                                {t('SplitModeField.byAmount')}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormDescription>
-                          {t(`${sExpense}.splitModeDescription`)}
-                        </FormDescription>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="saveDefaultSplittingOptions"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row gap-2 items-center space-y-0 pt-2">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <div>
-                          <FormLabel>
-                            {t('SplitModeField.saveAsDefault')}
-                          </FormLabel>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </CardContent>
-        </Card>
 
         {runtimeFeatureFlags.enableExpenseDocuments && (
           <Card className="mt-4">

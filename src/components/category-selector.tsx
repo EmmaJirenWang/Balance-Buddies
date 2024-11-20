@@ -23,7 +23,6 @@ import { forwardRef, useEffect, useState } from 'react'
 type Props = {
   categories: Category[]
   onValueChange: (categoryId: Category['id']) => void
-  /** Category ID to be selected by default. Overwriting this value will update current selection, too. */
   defaultValue: Category['id']
   isLoading: boolean
 }
@@ -38,7 +37,6 @@ export function CategorySelector({
   const [value, setValue] = useState<number>(defaultValue)
   const isDesktop = useMediaQuery('(min-width: 768px)')
 
-  // allow overwriting currently selected category from outside
   useEffect(() => {
     setValue(defaultValue)
     onValueChange(defaultValue)
